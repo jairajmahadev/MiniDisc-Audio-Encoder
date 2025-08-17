@@ -99,13 +99,18 @@ def write_wav(path: str, signal: np.ndarray, sr: int = SAMPLE_RATE) -> None:
 def read_wav(path: str) -> Tuple[np.ndarray, int]:
     with wave.open(path, "rb") as wf:
         nchan = wf.getnchannels()
-        assert nchan == 1, "Only mono WAV supported"
         sr = wf.getframerate()
         sampwidth = wf.getsampwidth()
         assert sampwidth == 2, "Only 16-bit PCM supported"
         nframes = wf.getnframes()
         data = wf.readframes(nframes)
     pcm = np.frombuffer(data, dtype=np.int16).astype(np.float32) / 32768.0
+    if nchan == 2:
+        # Stereo: reshape and average channels to mono
+        pcm = pcm.reshape(-1, 2)
+        pcm = pcm.mean(axis=1)
+    elif nchan != 1:
+        raise ValueError(f"Unsupported number of channels: {nchan}")
     return pcm, sr
 
 # -------- Goertzel: tone energy in a block --------
