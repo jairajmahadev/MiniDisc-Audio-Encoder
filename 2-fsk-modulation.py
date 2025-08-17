@@ -257,12 +257,14 @@ def main():
     sub = p.add_subparsers(dest="cmd", required=True)
 
     pe = sub.add_parser("encode", help="encode text to WAV")
-    pe.add_argument("--text", required=True, help="text to encode")
+    pe.add_argument("--text", help="text to encode")
+    pe.add_argument("--textfile", help="path to text file to encode")
     pe.add_argument("--out", required=True, help="output WAV path")
     pe.add_argument("--bitrate", type=float, default=1.0 / BIT_DURATION_S, help="bits per second (default ~20)")
 
     pd = sub.add_parser("decode", help="decode WAV to text")
     pd.add_argument("--wav", required=True, help="input WAV path")
+    pd.add_argument("--outfile", help="output text file path (optional)")
 
     args = p.parse_args()
 
@@ -270,11 +272,22 @@ def main():
         if args.bitrate <= 0:
             raise SystemExit("bitrate must be > 0")
         BIT_DURATION_S = 1.0 / args.bitrate
-        encode_text_to_wav(args.text, args.out)
+        text = args.text
+        if text is None and args.textfile:
+            with open(args.textfile, "r", encoding="utf-8") as f:
+                text = f.read()
+        if text is None:
+            raise SystemExit("You must provide --text or --textfile")
+        encode_text_to_wav(text, args.out)
         print(f"Wrote {args.out}")
     elif args.cmd == "decode":
         text = decode_wav_to_text(args.wav)
-        print(text)
+        if args.outfile:
+            with open(args.outfile, "w", encoding="utf-8") as f:
+                f.write(text)
+            print(f"Decoded text written to {args.outfile}")
+        else:
+            print(text)
 
 if __name__ == "__main__":
     main()
