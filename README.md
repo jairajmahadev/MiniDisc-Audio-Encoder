@@ -22,6 +22,3 @@ Install dependencies:
 ```powershell
 pip install numpy
 ```
-
-## License
-MIT
